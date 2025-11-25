@@ -12,45 +12,68 @@ const dateEl = document.getElementById("date");
 const imageEl = document.getElementById("image");
 const explanationEl = document.getElementById("explanation");
 
-async function getTodayPicture(date = "") {
-    loading.style.display = "block";
-    content.style.display = "none";
-    errorDiv.style.display = "none";
+function showPicture(data) {
+  titleEl.textContent = data.title;
+  dateEl.textContent = data.date;
+  explanationEl.textContent = data.explanation;
 
-    try {
-        let url = API_URL;
-        if (date) url += `&date=${date}`;
+  // remove any old video iframe
+  const oldIframe = content.querySelector("iframe");
+  if (oldIframe) oldIframe.remove();
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Error fetching picture");
+  if (data.media_type === "image") {
+    imageEl.src = data.hdurl || data.url;
+    imageEl.alt = data.title;
+    imageEl.style.display = "block";
+    // click image → open HD version in new tab
+    imageEl.onclick = () => window.open(data.hdurl || data.url, "_blank");
+  } else {
+    // it's a video (rare, but happens)
+    imageEl.style.display = "none";
+    const iframe = document.createElement("iframe");
+    iframe.width = "100%";
+    iframe.height = "500";
+    iframe.src = data.url;
+    iframe.frameBorder = "0";
+    iframe.allowFullscreen = true;
+    content.appendChild(iframe);
+  }
 
-        const data = await res.json();
-
-        titleEl.textContent = data.title;
-        dateEl.textContent = data.date;
-        explanationEl.textContent = data.explanation;
-        imageEl.src = data.hdurl || data.url;
-        imageEl.alt = data.title;
-
-        content.style.display = "block";
-    } catch (e) {
-        errorDiv.textContent = "Couldn't load picture – try another date";
-        errorDiv.style.display = "block";
-    } finally {
-        loading.style.display = "none";
-    }
+  content.style.display = "block";
 }
 
-// Buttons now actually work this time
-todayBtn.onclick = () => getTodayPicture();                   // today
+async function getTodayPicture(date = "") {
+  loading.style.display = "block";
+  content.style.display = "none";
+  errorDiv.style.display = "none";
+
+  try {
+    let url = API_URL;
+    if (date) url += `&date=${date}`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Bad date or Server Error");
+
+    const data = await res.json();
+    showPicture(data);
+  } catch (e) {
+    errorDiv.textContent = "Error: " + e.message;
+    errorDiv.style.display = "block";
+  } finally {
+    loading.style.display = "none";
+  }
+}
+
+// Final polished button functions
+todayBtn.onclick = () => getTodayPicture();
 dateBtn.onclick = () => {
-    const picked = datePicker.value;
-    if (!picked) {
-        errorDiv.textContent = "Please pick a date first!";
-        errorDiv.style.display = "block";
-        return;
-    }
-    getTodayPicture(picked);                                    // chosen date
+  const picked = datePicker.value;
+  if (!picked) {
+    errorDiv.textContent = "Please pick a date first!";
+    errorDiv.style.display = "block";
+    return;
+  }
+  getTodayPicture(picked);
 };
 
 // Loads today's picture

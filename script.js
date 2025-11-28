@@ -78,3 +78,27 @@ dateBtn.onclick = () => {
 
 // Loads today's picture
 window.onload = () => getTodayPicture();
+
+//new random button to satisfy 2nd endpoint requirement
+const randomBtn = document.getElementById("randomBtn");
+randomBtn.onclick = () => {
+  getPictureByCount();  
+};
+
+async function getPictureByCount() {
+  loading.style.display = "block";
+  content.style.display = "none";
+  errorDiv.style.display = "none";
+
+  try {
+    const res = await fetch(API_URL + "&count=1"); 
+    if (!res.ok) throw new Error("API error");
+    const data = await res.json();
+    showPicture(data[0]); 
+  } catch (e) {
+    errorDiv.textContent = "Error: " + e.message;
+    errorDiv.style.display = "block";
+  } finally {
+    loading.style.display = "none";
+  }
+}
